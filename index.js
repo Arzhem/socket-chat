@@ -27,11 +27,13 @@ const userSchema = new mongoose.Schema({
 });
 
 const Message = mongoose.model("Message", messageSchema);
-const User = mongooose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+app.use(express.json());
 
 app.post('/register', async (req, res) => {
    const { username, password } = req.body;
@@ -71,9 +73,9 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-   console.log('A user connected');
+   console.log(`A ${socket.username} connected`);
    socket.on('chat message', (data) => {
-       const newMessage = new Message({content: data, sender: socket.id});
+       const newMessage = new Message({content: data, sender: socket.username});
        try {
            newMessage.save();
            io.emit('chat message', data);
@@ -85,7 +87,7 @@ io.on('connection', (socket) => {
    socket.on('load history', async () => {
        try {
            const messages = await Message.find().sort({ timestamp: -1 }).limit(50).exec(); // Gets the last 50 messages newest first
-           socket.emit('history laoded', messages.reverse()); // Send to the client oldest first
+           socket.emit('history loaded', messages.reverse()); // Send to the client oldest first
        } catch (error) {
            console.error(error);
        }
@@ -95,8 +97,6 @@ io.on('connection', (socket) => {
        console.log('User disconnected');
    });
 });
-
-
 
 server.listen(3000, () => {
     console.log('Listening on port 3000');
