@@ -21,6 +21,7 @@
 
             socket.on('connect', () => {
                 console.log('Connected to server!');
+                socket.emit('load history');
             });
 
             const form = document.getElementById('form');
@@ -41,6 +42,27 @@
                 messages.appendChild(item);
                 window.scrollTo(0, document.body.scrollHeight);
             });
+
+            socket.on('history loaded', (history) => {
+                history.forEach(data => {
+                    const item = document.createAttribute('li');
+                    item.textContent = data.content;
+                    messages.appendChild(item);
+                })
+            })
+
+            const toggleButton = document.getElementById('toggle-btn');
+
+            toggleButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (socket.connected) {
+                    toggleButton.innerText = 'Connect';
+                    socket.disconnect();
+                } else {
+                    toggleButton.innerText = 'Disconnect';
+                    socket.connect();
+                }
+            });
         });
     </script>
 </head>
@@ -48,6 +70,7 @@
 <ul id="messages"></ul>
 <form id="form" action="">
     <label for="input"></label><input id="input" autocomplete="off" /><button>Send</button>
+    <button id="toggle-btn">Disconnect</button>
 </form>
 </body>
 </html>
