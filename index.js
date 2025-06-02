@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
    })
 
    socket.on('disconnect', () => {
-       console.log('User disconnected');
+       console.log(`${socket.username} disconnected`);
    });
 });
 
