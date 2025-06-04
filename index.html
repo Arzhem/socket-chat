@@ -23,130 +23,23 @@
         #auth-message { margin-top: 1rem; font-weight: bold; }
     </style>
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const socket = io('http://localhost:3000', { autoConnect: false }); // Don't connect immediately
-
-            const messages = document.getElementById('messages');
-            const chatForm = document.getElementById('form');
-            const chatInput = document.getElementById('input');
-            const toggleButton = document.getElementById('toggle-btn');
-
-            const authContainer = document.getElementById('auth-container');
-            const registerForm = document.getElementById('register-form');
-            const loginForm = document.getElementById('login-form');
-            const registerUsernameInput = document.getElementById('register-username');
-            const registerPasswordInput = document.getElementById('register-password');
-            const loginUsernameInput = document.getElementById('login-username');
-            const loginPasswordInput = document.getElementById('login-password');
-            const authMessage = document.getElementById('auth-message');
-
-            let authToken = localStorage.getItem('authToken');
-            if (authToken) {
-                authContainer.style.display = 'none';
-                socket.auth = { token: authToken };
-                socket.connect();
-            } else {
-                authContainer.style.display = 'flex';
-            }
-
-            registerForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const username = registerUsernameInput.value;
-                const password = registerPasswordInput.value;
-                const response = await fetch('/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }),
-                });
-                const data = await response.json();
-                authMessage.innerText = data.message;
-            });
-
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const username = loginUsernameInput.value;
-                const password = loginPasswordInput.value;
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password }),
-                });
-                const data = await response.json();
-                authMessage.innerText = data.message;
-                if (data.token) {
-                    localStorage.setItem('authToken', data.token);
-                    authToken = data.token;
-                    authContainer.style.display = 'none';
-                    socket.auth = { token: authToken };
-                    socket.connect();
-                }
-            });
-
-            socket.on('connect', () => {
-                console.log('Connected to server with token:', authToken);
-                socket.emit('load history');
-                toggleButton.innerText = 'Disconnect';
-            });
-
-            socket.on('disconnect', () => {
-                console.log('Disconnected from server.');
-                toggleButton.innerText = 'Connect';
-            });
-
-            chatForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                if (chatInput.value) {
-                    socket.emit('chat message', chatInput.value);
-                    chatInput.value = '';
-                }
-            });
-
-            socket.on('chat message', (msg) => {
-                const item = document.createElement('li');
-                item.textContent = msg;
-                messages.appendChild(item);
-                window.scrollTo(0, document.body.scrollHeight);
-            });
-
-            socket.on('history loaded', (history) => {
-                messages.innerHTML = '';
-                history.forEach(data => {
-                    const item = document.createElement('li');
-                    item.textContent = data.content;
-                    messages.appendChild(item);
-                });
-                window.scrollTo(0, document.body.scrollHeight);
-            });
-
-            toggleButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (socket.connected) {
-                    toggleButton.innerText = 'Connect';
-                    socket.disconnect();
-                } else {
-                    toggleButton.innerText = 'Disconnect';
-                    socket.connect();
-                }
-            });
-        });
-    </script>
+    <script src="/client.js"></script>
 </head>
 <body>
 <div id="auth-container">
     <div>
         <h3>Register</h3>
         <form id="register-form">
-            <input type="text" id="register-username" placeholder="Username" required>
-            <input type="password" id="register-password" placeholder="Password" required>
+            <label for="register-username"></label><input type="text" id="register-username" placeholder="Username" required>
+            <label for="register-password"></label><input type="password" id="register-password" placeholder="Password" required>
             <button type="submit">Register</button>
         </form>
     </div>
     <div>
         <h3>Login</h3>
         <form id="login-form">
-            <input type="text" id="login-username" placeholder="Username" required>
-            <input type="password" id="login-password" placeholder="Password" required>
+            <label for="login-username"></label><input type="text" id="login-username" placeholder="Username" required>
+            <label for="login-password"></label><input type="password" id="login-password" placeholder="Password" required>
             <button type="submit">Login</button>
         </form>
     </div>
@@ -155,7 +48,8 @@
 <ul id="messages"></ul>
 <form id="form" action="">
     <label for="input"></label><input id="input" autocomplete="off" /><button>Send</button>
-    <button id="toggle-btn">Connect</button>
+    <button class="toggle-btn" id="connection-btn">Connect</button>
+    <button class="toggle-btn" id="expensive-btn">Expensive</button>
 </form>
 </body>
 </html>

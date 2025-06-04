@@ -7,6 +7,7 @@ const path = require("node:path");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+// const { Worker } = require('worker_threads');
 const io = new Server(server, {
     connectionStateRecovery: true
 });
@@ -29,11 +30,12 @@ const userSchema = new mongoose.Schema({
 const Message = mongoose.model("Message", messageSchema);
 const User = mongoose.model("User", userSchema);
 
+app.use(express.json());
+app.use(express.static(__dirname));
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
-app.use(express.json());
 
 app.post('/register', async (req, res) => {
    const { username, password } = req.body;
@@ -74,6 +76,7 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
    console.log(`A ${socket.username} connected`);
+
    socket.on('chat message', (data) => {
        const newMessage = new Message({content: data, sender: socket.username});
        try {
@@ -93,6 +96,13 @@ io.on('connection', (socket) => {
        }
    })
 
+    socket.on('expensive', ({ requestId }) => {
+        console.log('Heavy computation started');
+        heavyComputation(); // synchronous
+        socket.emit('completed', { requestId });
+        console.log('Heavy computation completed');
+    });
+
    socket.on('disconnect', () => {
        console.log(`${socket.username} disconnected`);
    });
@@ -101,3 +111,9 @@ io.on('connection', (socket) => {
 server.listen(3000, () => {
     console.log('Listening on port 3000');
 });
+
+function heavyComputation() {
+    const start = Date.now();
+    while (Date.now() - start < 5000);
+    // loops until 5 seconds have passed
+}
