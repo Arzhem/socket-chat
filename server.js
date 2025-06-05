@@ -7,12 +7,12 @@ const path = require("node:path");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-// const { Worker } = require('worker_threads');
+const { Worker } = require('worker_threads');
 const io = new Server(server, {
     connectionStateRecovery: true
 });
 
-mongoose.connect('mongodb://localhost:27017/', {useNewUrlParser: true, useUnifiedTopology: true})
+mongoose.connect('mongodb://localhost:27017/my_test_db', {useNewUrlParser: true, useUnifiedTopology: true})
     .then(() => console.log("Connected to MongoDB"))
     .catch(err => console.log(err));
 
@@ -97,10 +97,23 @@ io.on('connection', (socket) => {
    })
 
     socket.on('expensive', ({ requestId }) => {
-        console.log('Heavy computation started');
-        heavyComputation(); // synchronous
-        socket.emit('completed', { requestId });
-        console.log('Heavy computation completed');
+        const worker = new Worker('./expensiveTask.js');
+
+        worker.on('message', (message) => {
+            console.log(`Worker thread message: ${message}`);
+            socket.emit('completed', { requestId });
+            console.log(`${socket.username} ran heavy computation`);
+        })
+
+        worker.on('error', (err) => {
+            console.log(err);
+        });
+
+        worker.on('exit', (code) => {
+            if(code !== 0) {
+                console.log(`Worker stopped with exit code ${code}`);
+            }
+        });
     });
 
    socket.on('disconnect', () => {
@@ -112,8 +125,3 @@ server.listen(3000, () => {
     console.log('Listening on port 3000');
 });
 
-function heavyComputation() {
-    const start = Date.now();
-    while (Date.now() - start < 5000);
-    // loops until 5 seconds have passed
-}

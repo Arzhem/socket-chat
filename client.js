@@ -1,6 +1,6 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = io('http://localhost:3000', { autoConnect: false }); // Don't connect immediately
+    const socket = io({ autoConnect: false }); // Don't connect immediately
 
     const messages = document.getElementById('messages');
     const chatForm = document.getElementById('form');
