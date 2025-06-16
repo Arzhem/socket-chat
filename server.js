@@ -8,6 +8,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Worker } = require('worker_threads');
+const { Mutex } = require('async-mutex');
 const io = new Server(server, {
     connectionStateRecovery: true
 });
@@ -29,6 +30,9 @@ const userSchema = new mongoose.Schema({
 
 const Message = mongoose.model("Message", messageSchema);
 const User = mongoose.model("User", userSchema);
+
+const lockA = new Mutex();
+const lockB = new Mutex();
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -77,10 +81,11 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
    console.log(`A ${socket.username} connected`);
 
-   socket.on('chat message', (data) => {
+   socket.on('chat message', async (data) => {
        const newMessage = new Message({content: data, sender: socket.username});
        try {
-           newMessage.save();
+           await newMessage.save();
+           console.log(`Message from ${socket.username} saved to DB.`);
            io.emit('chat message', data);
        } catch (error) {
            console.error(error);
@@ -106,15 +111,26 @@ io.on('connection', (socket) => {
         })
 
         worker.on('error', (err) => {
-            console.log(err);
+            console.error(err);
         });
 
         worker.on('exit', (code) => {
-            if(code !== 0) {
-                console.log(`Worker stopped with exit code ${code}`);
-            }
+            if(code !== 0) console.error(`Worker stopped with exit code ${code}`);
         });
     });
+
+   socket.on('locktest', async () => {
+       const releaseA = await lockA.acquire();
+       console.log('Lock A acquired');
+
+       setTimeout(async () => {
+           const releaseB = await lockB.acquire();
+           console.log('Lock B acquired');
+
+           releaseB();
+           releaseA();
+       }, 2000);
+   });
 
    socket.on('disconnect', () => {
        console.log(`${socket.username} disconnected`);

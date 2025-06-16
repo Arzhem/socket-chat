@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('input');
     const connectionButton = document.getElementById('connection-btn');
     const expensiveButton = document.getElementById('expensive-btn');
+    const deadlockButton = document.getElementById('deadlock-btn');
 
     const authContainer = document.getElementById('auth-container');
     const registerForm = document.getElementById('register-form');
@@ -125,5 +126,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    deadlockButton.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        const requestId = Date.now().toString();
+        socket.emit('locktest', { requestId });
+
+        deadlockButton.innerText = 'Locking...';
+        deadlockButton.disabled = true;
+
+        socket.on('completed', ({ requestId: returnedId }) => {
+            if (requestId === returnedId) {
+                deadlockButton.innerText = 'Deadlock';
+                deadlockButton.disabled = false;
+            }
+        })
+    })
 
 });
