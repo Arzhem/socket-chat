@@ -2,7 +2,7 @@ A minimalist real-time web chat application, optimized for high concurrency and 
 
 
 
-While `Node.js` is built on non-blocking I/O and the [`Socket.IO`](https://socket.io/docs/v4/) library has built-in management for reconnection attempts, connection, disconnection events and handling multiple clients simulatenously, they don't handle the following from the get-go:
+`Node.js` is built on non-blocking I/O and the [`Socket.IO`](https://socket.io/docs/v4/) library has built-in management for reconnection attempts, connection, disconnection events and handling multiple clients simulatenously, but they don't handle the following from the get-go:
 
 - **State management:** who sent what, message history, queues of tasks, user roles or routing logic and if something needs to be processed in order,
 
